@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Price Prediction Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f6fb;
+            color: #1e293b;
+        }
+
+        header {
+            background: linear-gradient(135deg, #14213d, #2563eb);
+            color: white;
+            padding: 28px 6%;
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: #dbeafe;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            padding: 25px;
+        }
+
+        .upload-section {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 3px 12px #0000000a;
+        }
+
+        .upload-section h2,
+        .section-title {
+            margin-bottom: 15px;
+        }
+
+        .upload-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 18px;
+        }
+
+        .upload-box {
+            border: 1px dashed #93a4bd;
+            padding: 17px;
+            border-radius: 9px;
+            background: #f8fafc;
+        }
+
+        .upload-box label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            font-size: 13px;
+        }
+
+        .status {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #2563eb;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px #0000000a;
+            border-left: 4px solid #2563eb;
+        }
+
+        .card p {
+            color: #64748b;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .card h2 {
+            font-size: 25px;
+            color: #172554;
+            overflow-wrap: anywhere;
+        }
+
+        .section-title {
+            font-size: 21px;
+            margin-top: 30px;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 22px;
+        }
+
+        .chart-box {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            min-width: 0;
+            box-shadow: 0 3px 12px #0000000a;
+        }
+
+        .chart-box h3 {
+            font-size: 16px;
+            margin-bottom: 18px;
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+
+        th {
+            background: #eff6ff;
+            color: #1e40af;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .model-info {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .model-info p {
+            margin: 10px 0;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .empty-message {
+            color: #64748b;
+            font-size: 14px;
+            padding: 20px 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            margin-top: 30px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 22px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>House Price Prediction Dashboard</h1>
+    <p>California Housing Dataset | Exploratory Data Analysis | Machine Learning</p>
+</header>
+
+<main class="container">
+
+    <!-- FILE UPLOADS -->
+    <section class="upload-section">
+        <h2>Load Project Data</h2>
+        <p style="color:#64748b; margin-bottom:18px; font-size:14px;">
+            Upload the CSV files generated by your Python project to populate the dashboard.
+        </p>
+
+        <div class="upload-grid">
+
+            <div class="upload-box">
+                <label for="housingFile">1. Housing Dataset</label>
+                <input type="file" id="housingFile" accept=".csv">
+            </div>
+
+            <div class="upload-box">
+                <label for="metricsFile">2. Model Evaluation CSV</label>
+                <input type="file" id="metricsFile" accept=".csv">
+            </div>
+
+            <div class="upload-box">
+                <label for="predictionsFile">3. Prediction Results CSV</label>
+                <input type="file" id="predictionsFile" accept=".csv">
+            </div>
+
+        </div>
+
+        <div class="status" id="status">
+            Upload housing.csv to get started.
+        </div>
+    </section>
+
+    <!-- DATASET OVERVIEW -->
+    <h2 class="section-title">Dataset Overview</h2>
+
+    <section class="cards">
+        <div class="card">
+            <p>Total Records</p>
+            <h2 id="totalRecords">—</h2>
+        </div>
+
+        <div class="card">
+            <p>Total Features</p>
+            <h2 id="totalFeatures">—</h2>
+        </div>
+
+        <div class="card">
+            <p>Missing Values</p>
+            <h2 id="missingValues">—</h2>
+        </div>
+
+        <div class="card">
+            <p>Average House Value</p>
+            <h2 id="averagePrice">—</h2>
+        </div>
+
+        <div class="card">
+            <p>Median House Value</p>
+            <h2 id="medianPrice">—</h2>
+        </div>
+
+        <div class="card">
+            <p>Duplicate Rows</p>
+            <h2 id="duplicateRows">—</h2>
+        </div>
+    </section>
+
+    <!-- VISUALIZATIONS -->
+    <h2 class="section-title">Exploratory Data Analysis</h2>
+
+    <section class="chart-grid">
+
+        <div class="chart-box">
+            <h3>House Price Distribution</h3>
+            <div class="chart-container">
+                <canvas id="priceChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <h3>Median Income vs House Value</h3>
+            <div class="chart-container">
+                <canvas id="incomeChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <h3>House Values by Ocean Proximity</h3>
+            <div class="chart-container">
+                <canvas id="oceanChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <h3>Correlation with House Value</h3>
+            <div class="chart-container">
+                <canvas id="correlationChart"></canvas>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- MISSING VALUES -->
+    <h2 class="section-title">Data Quality Analysis</h2>
+
+    <div class="chart-grid">
+        <div class="chart-box">
+            <h3>Missing Values by Feature</h3>
+            <div class="chart-container">
+                <canvas id="missingChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <h3>Model Performance Metrics</h3>
+            <div class="chart-container">
+                <canvas id="metricsChart"></canvas>
+            </div>
+            <p id="modelStatus" class="empty-message">
+                Upload the model evaluation CSV to display results.
+            </p>
+        </div>
+    </div>
+
+    <!-- CORRELATION TABLE -->
+    <h2 class="section-title">Correlation Analysis</h2>
+
+    <div class="table-container">
+        <table id="correlationTable">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Correlation with House Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="2">Upload the housing dataset to calculate correlations.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- DESCRIPTIVE STATISTICS -->
+    <h2 class="section-title">Descriptive Statistics</h2>
+
+    <div class="table-container">
+        <table id="statisticsTable">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Mean</th>
+                    <th>Median</th>
+                    <th>Minimum</th>
+                    <th>Maximum</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="5">Upload the housing dataset to calculate statistics.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- MODEL RESULTS -->
+    <h2 class="section-title">Machine Learning Model</h2>
+
+    <section class="cards">
+        <div class="card">
+            <p>Mean Absolute Error (MAE)</p>
+            <h2 id="mae">—</h2>
+        </div>
+
+        <div class="card">
+            <p>Mean Squared Error (MSE)</p>
+            <h2 id="mse">—</h2>
+        </div>
+
+        <div class="card">
+            <p>Root Mean Squared Error (RMSE)</p>
+            <h2 id="rmse">—</h2>
+        </div>
+
+        <div class="card">
+            <p>R² Score</p>
+            <h2 id="r2">—</h2>
+        </div>
+    </section>
+
+    <div class="chart-grid">
+
+        <div class="chart-box">
+            <h3>Actual vs Predicted House Prices</h3>
+            <div class="chart-container">
+                <canvas id="predictionChart"></canvas>
+            </div>
+            <p class="empty-message" id="predictionStatus">
+                Upload the prediction results CSV to display actual and predicted values.
+            </p>
+        </div>
+
+        <div class="model-info">
+            <h3>Model Information</h3>
+            <p><strong>Algorithm:</strong> Linear Regression</p>
+            <p><strong>Dataset:</strong> California Housing Prices</p>
+            <p><strong>Target Variable:</strong> median_house_value</p>
+            <p><strong>Train-Test Split:</strong> 80% training and 20% testing</p>
+            <p><strong>Evaluation:</strong> MAE, MSE, RMSE and R² Score</p>
+            <p><strong>Purpose:</strong> Estimate house values using housing and location-related features.</p>
+            <span class="badge">Regression Model</span>
+        </div>
+
+    </div>
+
+    <!-- PREVIEW -->
+    <h2 class="section-title">Dataset Preview</h2>
+
+    <div class="table-container">
+        <table id="previewTable">
+            <thead></thead>
+            <tbody>
+                <tr>
+                    <td>Upload housing.csv to preview the dataset.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</main>
+
+<footer>
+    House Price Prediction Project | Exploratory Data Analysis and Linear Regression
+</footer>
+
+<script>
+    let housingData = [];
+    let charts = {};
+
+    const target = "median_house_value";
+
+    const numericFeatures = [
+        "longitude",
+        "latitude",
+        "housing_median_age",
+        "total_rooms",
+        "total_bedrooms",
+        "population",
+        "households",
+        "median_income",
+        "median_house_value"
+    ];
+
+    function formatNumber(value, decimals = 2) {
+        if (!Number.isFinite(value)) return "—";
+
+        return value.toLocaleString("en-US", {
+            maximumFractionDigits: decimals,
+            minimumFractionDigits: 0
+        });
+    }
+
+    function formatCurrency(value) {
+        if (!Number.isFinite(value)) return "—";
+
+        return "$" + Math.round(value).toLocaleString("en-US");
+    }
+
+    function parseNumber(value) {
+        if (value === null || value === undefined || value === "") {
+            return NaN;
+        }
+
+        const number = Number(value);
+        return Number.isFinite(number) ? number : NaN;
+    }
+
+    function numericValues(rows, column) {
+        return rows
+            .map(row => parseNumber(row[column]))
+            .filter(value => Number.isFinite(value));
+    }
+
+    function mean(values) {
+        if (!values.length) return NaN;
+
+        return values.reduce((sum, value) => sum + value, 0) / values.length;
+    }
+
+    function median(values) {
+        if (!values.length) return NaN;
+
+        const sorted = [...values].sort((a, b) => a - b);
+        const mid = Math.floor(sorted.length / 2);
+
+        return sorted.length % 2
+            ? sorted[mid]
+            : (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+
+    function standardDeviation(values) {
+        if (values.length < 2) return 0;
+
+        const avg = mean(values);
+
+        return Math.sqrt(
+            values.reduce((sum, value) => sum + (value - avg) ** 2, 0)
+            / values.length
+        );
+    }
+
+    function correlation(x, y) {
+        const pairs = [];
+
+        for (let i = 0; i < Math.min(x.length, y.length); i++) {
+            if (Number.isFinite(x[i]) && Number.isFinite(y[i])) {
+                pairs.push([x[i], y[i]]);
+            }
+        }
+
+        if (pairs.length < 2) return NaN;
+
+        const xs = pairs.map(pair => pair[0]);
+        const ys = pairs.map(pair => pair[1]);
+
+        const avgX = mean(xs);
+        const avgY = mean(ys);
+
+        const denominator =
+            Math.sqrt(xs.reduce((sum, value) => sum + (value - avgX) ** 2, 0)) *
+            Math.sqrt(ys.reduce((sum, value) => sum + (value - avgY) ** 2, 0));
+
+        if (denominator === 0) return NaN;
+
+        return pairs.reduce(
+            (sum, pair) => sum + (pair[0] - avgX) * (pair[1] - avgY),
+            0
+        ) / denominator;
+    }
+
+    function makeChart(id, type, labels, datasets, options = {}) {
+        if (charts[id]) {
+            charts[id].destroy();
+        }
+
+        const canvas = document.getElementById(id);
+
+        charts[id] = new Chart(canvas, {
+            type,
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: type !== "bar" || datasets.length > 1
+                    }
+                },
+                ...options
+            }
+        });
+
+        return charts[id];
+    }
+
+    function readCSV(file, callback) {
+        if (!file) return;
+
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: false,
+
+            complete: function(results) {
+                if (results.errors.length) {
+                    console.warn("CSV parsing warnings:", results.errors);
+                }
+
+                callback(results.data, results.meta.fields || []);
+            },
+
+            error: function(error) {
+                document.getElementById("status").textContent =
+                    "Could not read CSV: " + error.message;
+            }
+        });
+    }
+
+    document.getElementById("housingFile").addEventListener("change", function(event) {
+        readCSV(event.target.files[0], function(data, fields) {
+            if (!fields.includes(target)) {
+                document.getElementById("status").textContent =
+                    "Error: housing.csv must contain the median_house_value column.";
+                return;
+            }
+
+            housingData = data.filter(row =>
+                row && Object.values(row).some(value => value !== "")
+            );
+
+            document.getElementById("status").textContent =
+                "Housing dataset loaded successfully: " +
+                housingData.length.toLocaleString() + " rows.";
+
+            updateOverview(fields);
+            updateDistribution();
+            updateIncomeChart();
+            updateOceanChart();
+            updateCorrelation();
+            updateMissingValues(fields);
+            updateStatistics(fields);
+            updatePreview(fields);
+        });
+    });
+
+    document.getElementById("metricsFile").addEventListener("change", function(event) {
+        readCSV(event.target.files[0], function(data, fields) {
+            if (!data.length) {
+                document.getElementById("status").textContent =
+                    "The model evaluation CSV is empty.";
+                return;
+            }
+
+            const row = data[0];
+
+            const mae = parseNumber(row.MAE);
+            const mse = parseNumber(row.MSE);
+            const rmse = parseNumber(row.RMSE);
+            const r2 = parseNumber(row.R2);
+
+            document.getElementById("mae").textContent =
+                Number.isFinite(mae) ? formatNumber(mae) : "—";
+
+            document.getElementById("mse").textContent =
+                Number.isFinite(mse) ? formatNumber(mse) : "—";
+
+            document.getElementById("rmse").textContent =
+                Number.isFinite(rmse) ? formatNumber(rmse) : "—";
+
+            document.getElementById("r2").textContent =
+                Number.isFinite(r2) ? formatNumber(r2, 4) : "—";
+
+            const values = [
+                { label: "MAE", value: mae },
+                { label: "RMSE", value: rmse }
+            ].filter(item => Number.isFinite(item.value));
+
+            if (values.length) {
+                makeChart(
+                    "metricsChart",
+                    "bar",
+                    values.map(item => item.label),
+                    [{
+                        label: "Error",
+                        data: values.map(item => item.value),
+                        backgroundColor: ["#2563eb", "#60a5fa"]
+                    }]
+                );
+            }
+
+            document.getElementById("modelStatus").textContent =
+                "Metrics loaded from your model evaluation CSV. " +
+                (Number.isFinite(r2) ? "R² = " + formatNumber(r2, 4) : "");
+        });
+    });
+
+    document.getElementById("predictionsFile").addEventListener("change", function(event) {
+        readCSV(event.target.files[0], function(data, fields) {
+            if (!fields.includes("actual") || !fields.includes("predicted")) {
+                document.getElementById("predictionStatus").textContent =
+                    "Expected CSV columns: actual and predicted.";
+                return;
+            }
+
+            const validRows = data.filter(row =>
+                Number.isFinite(parseNumber(row.actual)) &&
+                Number.isFinite(parseNumber(row.predicted))
+            );
+
+            // Display a sample to keep the chart responsive for large files.
+            const maxPoints = 500;
+            const step = Math.max(1, Math.ceil(validRows.length / maxPoints));
+            const sample = validRows.filter((row, index) => index % step === 0);
+
+            const actual = sample.map(row => parseNumber(row.actual));
+            const predicted = sample.map(row => parseNumber(row.predicted));
+
+            makeChart(
+                "predictionChart",
+                "scatter",
+                [],
+                [
+                    {
+                        label: "Predicted Values",
+                        data: actual.map((x, index) => ({
+                            x,
+                            y: predicted[index]
+                        })),
+                        backgroundColor: "#2563eb",
+                        pointRadius: 3
+                    },
+                    {
+                        label: "Perfect Prediction Reference",
+                        data: [
+                            { x: Math.min(...actual), y: Math.min(...actual) },
+                            { x: Math.max(...actual), y: Math.max(...actual) }
+                        ],
+                        showLine: true,
+                        pointRadius: 0,
+                        borderColor: "#ef4444",
+                        borderDash: [6, 4]
+                    }
+                ],
+                {
+                    scales: {
+                        x: {
+                            type: "linear",
+                            title: {
+                                display: true,
+                                text: "Actual House Value ($)"
+                            },
+                            ticks: {
+                                callback: value => "$" + Number(value).toLocaleString()
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: "Predicted House Value ($)"
+                            },
+                            ticks: {
+                                callback: value => "$" + Number(value).toLocaleString()
+                            }
+                        }
+                    }
+                }
+            );
+
+            document.getElementById("predictionStatus").textContent =
+                "Displaying " + sample.length.toLocaleString() +
+                " of " + validRows.length.toLocaleString() +
+                " valid prediction records.";
+        });
+    });
+
+    function updateOverview(fields) {
+        const priceValues = numericValues(housingData, target);
+        const missing = housingData.reduce((total, row) => {
+            return total + fields.filter(field =>
+                row[field] === null ||
+                row[field] === undefined ||
+                String(row[field]).trim() === ""
+            ).length;
+        }, 0);
+
+        const seen = new Set();
+        let duplicates = 0;
+
+        housingData.forEach(row => {
+            const key = JSON.stringify(fields.map(field => row[field] ?? ""));
+            if (seen.has(key)) {
+                duplicates++;
+            } else {
+                seen.add(key);
+            }
+        });
+
+        document.getElementById("totalRecords").textContent =
+            housingData.length.toLocaleString();
+
+        document.getElementById("totalFeatures").textContent = fields.length;
+
+        document.getElementById("missingValues").textContent =
+            missing.toLocaleString();
+
+        document.getElementById("averagePrice").textContent =
+            formatCurrency(mean(priceValues));
+
+        document.getElementById("medianPrice").textContent =
+            formatCurrency(median(priceValues));
+
+        document.getElementById("duplicateRows").textContent =
+            duplicates.toLocaleString();
+    }
+
+    function updateDistribution() {
+        const prices = numericValues(housingData, target);
+        if (!prices.length) return;
+
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        const bins = 20;
+        const width = (max - min) / bins || 1;
+
+        const counts = Array(bins).fill(0);
+        const labels = Array.from({ length: bins }, (_, index) => {
+            const start = min + index * width;
+            const end = start + width;
+
+            return "$" + Math.round(start / 1000) + "k–$" +
+                Math.round(end / 1000) + "k";
+        });
+
+        prices.forEach(price => {
+            const index = Math.min(
+                bins - 1,
+                Math.floor((price - min) / width)
+            );
+            counts[index]++;
+        });
+
+        makeChart("priceChart", "bar", labels, [{
+            label: "Number of Homes",
+            data: counts,
+            backgroundColor: "#3b82f6",
+            borderRadius: 4
+        }], {
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    ticks: { maxRotation: 65, minRotation: 35 }
+                }
+            }
+        });
+    }
+
+    function updateIncomeChart() {
+        const rows = housingData.filter(row =>
+            Number.isFinite(parseNumber(row.median_income)) &&
+            Number.isFinite(parseNumber(row[target]))
+        );
+
+        const step = Math.max(1, Math.ceil(rows.length / 1200));
+        const sample = rows.filter((row, index) => index % step === 0);
+
+        makeChart("incomeChart", "scatter", [], [{
+            label: "Housing Records",
+            data: sample.map(row => ({
+                x: parseNumber(row.median_income),
+                y: parseNumber(row[target])
+            })),
+            backgroundColor: "#0ea5e9",
+            pointRadius: 3
+        }], {
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: "Median Income (dataset units)"
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: "Median House Value ($)"
+                    }
+                }
+            }
+        });
+    }
+
+    function updateOceanChart() {
+        const groups = {};
+
+        housingData.forEach(row => {
+            const category = row.ocean_proximity || "Unknown";
+            const price = parseNumber(row[target]);
+
+            if (!Number.isFinite(price)) return;
+
+            if (!groups[category]) groups[category] = [];
+            groups[category].push(price);
+        });
+
+        const labels = Object.keys(groups);
+        const values = labels.map(category => mean(groups[category]));
+
+        makeChart("oceanChart", "bar", labels, [{
+            label: "Average House Value ($)",
+            data: values,
+            backgroundColor: "#14b8a6",
+            borderRadius: 5
+        }], {
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: value => "$" + Number(value).toLocaleString()
+                    }
+                }
+            }
+        });
+    }
+
+    function updateCorrelation() {
+        const available = numericFeatures.filter(feature =>
+            housingData.some(row => row[feature] !== undefined)
+        );
+
+        const targetValues = housingData.map(row => parseNumber(row[target]));
+
+        const results = available
+            .filter(feature => feature !== target)
+            .map(feature => ({
+                feature,
+                value: correlation(
+                    housingData.map(row => parseNumber(row[feature])),
+                    targetValues
+                )
+            }))
+            .filter(item => Number.isFinite(item.value))
+            .sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+
+        const tbody = document.querySelector("#correlationTable tbody");
+
+        tbody.innerHTML = "";
+
+        results.forEach(item => {
+            const tr = document.createElement("tr");
+            const featureCell = document.createElement("td");
+            const valueCell = document.createElement("td");
+
+            featureCell.textContent = item.feature;
+            valueCell.textContent = item.value.toFixed(4);
+
+            tr.append(featureCell, valueCell);
+            tbody.appendChild(tr);
+        });
+
+        makeChart("correlationChart", "bar",
+            results.map(item => item.feature),
+            [{
+                label: "Correlation",
+                data: results.map(item => item.value),
+                backgroundColor: results.map(item =>
+                    item.value >= 0 ? "#2563eb" : "#f97316"
+                )
+            }],
+            {
+                indexAxis: "y",
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        min: -1,
+                        max: 1,
+                        title: {
+                            display: true,
+                            text: "Correlation Coefficient"
+                        }
+                    }
+                }
+            }
+        );
+    }
+
+    function updateMissingValues(fields) {
+        const counts = fields.map(field => ({
+            field,
+            count: housingData.filter(row =>
+                row[field] === null ||
+                row[field] === undefined ||
+                String(row[field]).trim() === ""
+            ).length
+        }));
+
+        makeChart("missingChart", "bar",
+            counts.map(item => item.field),
+            [{
+                label: "Missing Values",
+                data: counts.map(item => item.count),
+                backgroundColor: "#f59e0b"
+            }],
+            {
+                indexAxis: "y",
+                plugins: { legend: { display: false } }
+            }
+        );
+    }
+
+    function updateStatistics(fields) {
+        const tbody = document.querySelector("#statisticsTable tbody");
+        tbody.innerHTML = "";
+
+        const columns = fields.filter(field =>
+            housingData.some(row => Number.isFinite(parseNumber(row[field])))
+        );
+
+        columns.forEach(field => {
+            const values = numericValues(housingData, field);
+            if (!values.length) return;
+
+            const tr = document.createElement("tr");
+
+            [
+                field,
+                formatNumber(mean(values)),
+                formatNumber(median(values)),
+                formatNumber(Math.min(...values)),
+                formatNumber(Math.max(...values))
+            ].forEach(value => {
+                const td = document.createElement("td");
+                td.textContent = value;
+                tr.appendChild(td);
+            });
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updatePreview(fields) {
+        const table = document.getElementById("previewTable");
+        const thead = table.querySelector("thead");
+        const tbody = table.querySelector("tbody");
+
+        thead.innerHTML = "";
+        tbody.innerHTML = "";
+
+        const headerRow = document.createElement("tr");
+
+        fields.forEach(field => {
+            const th = document.createElement("th");
+            th.textContent = field;
+            headerRow.appendChild(th);
+        });
+
+        thead.appendChild(headerRow);
+
+        housingData.slice(0, 10).forEach(row => {
+            const tr = document.createElement("tr");
+
+            fields.forEach(field => {
+                const td = document.createElement("td");
+                td.textContent = row[field] ?? "";
+                tr.appendChild(td);
+            });
+
+            tbody.appendChild(tr);
+        });
+    }
+</script>
+
+</body>
+</html>
